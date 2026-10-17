@@ -1,0 +1,9 @@
+# downloaded data packages and DownloadToFile's in-progress temp files
+*.zip
+*.part-*
+
+# editor / OS
+.DS_Store
+
+# build output
+bin/
