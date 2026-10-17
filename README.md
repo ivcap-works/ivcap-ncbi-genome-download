@@ -194,8 +194,9 @@ These are our derivations from NCBI's OpenAPI definition, not official NCBI
 schemas; see [schema/README.md](schema/README.md) for what they do and do not
 check.
 
-Each schema has an `$id`: a raw.githubusercontent.com URL on this repository's
-`main` branch, so it only resolves once the files are pushed there. A marshalled
+Each schema has an `$id`: a raw.githubusercontent.com URL pinned to a release tag of
+this repository (for example `v0.2.0`), so the schema a record points to never
+changes after the release. It resolves once that tag is pushed. A marshalled
 `AssemblyDataReport` starts with a `"$schema"` property holding the snake_case
 schema's `$id` (`AssemblyDataReportSchemaURL`), so stored or exchanged records
 say what they conform to. Decoding ignores that property, and nested values do

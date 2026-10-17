@@ -10,13 +10,18 @@ and writes, below --out:
                                                    (assembly_data_report.jsonl in data packages)
   report_types.go                                  Go types for the snake_case form
 
-Each schema gets an "$id" (--schema-base-url plus the file name). The Go type
+Each schema gets an "$id" (the base URL, from --version or --schema-base-url, plus the file name). The Go type
 AssemblyDataReport marshals with a "$schema" property holding the snake_case
 schema's $id.
 
 Usage:
   python3 tools/genreport/generate.py --spec PATH/datasets.openapi.yaml \\
-      --commit <git commit of the ncbi/datasets checkout> [--schema-base-url URL] [--out .]
+      --commit <git commit of the ncbi/datasets checkout> --version vX.Y.Z [--out .]
+
+--version is the release tag the schemas will be published under (for example v0.2.0). It sets
+every "$id" and the Go constant to the raw.githubusercontent.com URLs of that tag. Regenerate with
+the version of a release before tagging it. Use --schema-base-url URL instead of --version to
+publish the schemas somewhere else.
 
 Requires PyYAML. The script stops on any spec construct it does not know, so a
 changed spec cannot be converted silently and wrongly.
@@ -35,7 +40,10 @@ PREFIX = "v2reports"
 KNOWN_KEYWORDS = {"type", "title", "$ref", "format", "enum", "default", "items", "properties"}
 KNOWN_TYPES = {"object", "string", "integer", "number", "boolean", "array"}
 KNOWN_FORMATS = {"float", "uint64"}
-DEFAULT_SCHEMA_BASE = "https://raw.githubusercontent.com/ivcap-works/ivcap-ncbi-genome-download/main/schema/"
+# The $id of every schema is pinned to a release tag, so the schema that a record points to never
+# changes after the release. --version only accepts release tags, never a branch such as "main".
+SCHEMA_BASE_TEMPLATE = "https://raw.githubusercontent.com/ivcap-works/ivcap-ncbi-genome-download/{version}/schema/"
+VERSION_PATTERN = r"v\d+\.\d+\.\d+(-[0-9A-Za-z.]+)?"
 SNAKE_FILE = "assembly-data-report.schema.json"
 PACKAGE_FILE = "assembly-data-report.package.schema.json"
 SCHEMA_PROPERTY = {
@@ -272,10 +280,16 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--spec", required=True, help="path to datasets.openapi.yaml")
     ap.add_argument("--commit", default="unknown", help="git commit of the ncbi/datasets checkout")
-    ap.add_argument("--schema-base-url", default=DEFAULT_SCHEMA_BASE,
-                    help="URL under which the schema files will be published (used for each $id)")
+    ap.add_argument("--version",
+                    help="release tag the schemas are published under, for example v0.2.0 (sets every $id)")
+    ap.add_argument("--schema-base-url",
+                    help="publish the schemas under this URL instead of a release tag (sets every $id)")
     ap.add_argument("--out", default=".", help="repository root to write into")
     a = ap.parse_args()
+    if bool(a.version) == bool(a.schema_base_url):
+        ap.error("give exactly one of --version and --schema-base-url")
+    if a.version and not re.fullmatch(VERSION_PATTERN, a.version):
+        ap.error(f"--version must be a release tag such as v0.2.0, not {a.version!r}")
 
     raw = open(a.spec, "rb").read()
     sha = hashlib.sha256(raw).hexdigest()
@@ -290,7 +304,8 @@ def main():
         "schema. Additions to the source definition: uint64 strings carry the pattern ^[0-9]+$, and the root "
         'declares an optional "$schema" property.'
     )
-    base = a.schema_base_url if a.schema_base_url.endswith("/") else a.schema_base_url + "/"
+    base = a.schema_base_url or SCHEMA_BASE_TEMPLATE.format(version=a.version)
+    base = base if base.endswith("/") else base + "/"
     snake_id, package_id = base + SNAKE_FILE, base + PACKAGE_FILE
 
     def js(doc):

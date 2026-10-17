@@ -141,7 +141,7 @@ type AssemblyDataReport struct {
 
 // AssemblyDataReportSchemaURL is the $id of the JSON Schema for the JSON form of
 // AssemblyDataReport (schema/assembly-data-report.schema.json in the repository).
-const AssemblyDataReportSchemaURL = "https://raw.githubusercontent.com/ivcap-works/ivcap-ncbi-genome-download/main/schema/assembly-data-report.schema.json"
+const AssemblyDataReportSchemaURL = "https://raw.githubusercontent.com/ivcap-works/ivcap-ncbi-genome-download/v0.2.0/schema/assembly-data-report.schema.json"
 
 // MarshalJSON writes the report with a "$schema" property that points at its JSON
 // Schema, so stored or exchanged records say what they conform to. Decoding

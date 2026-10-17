@@ -12,12 +12,13 @@ definitions it references, in the `datasets.openapi.yaml` of
 
 Their `$id`s are:
 
-- `https://raw.githubusercontent.com/ivcap-works/ivcap-ncbi-genome-download/main/schema/assembly-data-report.schema.json`
-- `https://raw.githubusercontent.com/ivcap-works/ivcap-ncbi-genome-download/main/schema/assembly-data-report.package.schema.json`
+- `https://raw.githubusercontent.com/ivcap-works/ivcap-ncbi-genome-download/v0.2.0/schema/assembly-data-report.schema.json`
+- `https://raw.githubusercontent.com/ivcap-works/ivcap-ncbi-genome-download/v0.2.0/schema/assembly-data-report.package.schema.json`
 
-An `$id` is an identifier; these URLs only resolve once the files are pushed to
-the `main` branch of that repository. To publish them elsewhere, regenerate with
-`--schema-base-url` (see below), which also updates the Go constant.
+An `$id` is an identifier. These URLs are pinned to the release tag `v0.2.0`, so they
+only resolve once that tag is pushed, and they never change afterwards. Every release
+gets its own URLs: regenerate with `--version` (see below), which also updates the Go
+constant. To publish the schemas elsewhere, use `--schema-base-url` instead.
 
 A record can say which schema it follows through a top-level `"$schema"`
 property. The Go type `AssemblyDataReport` writes one automatically (the
@@ -62,9 +63,15 @@ a 2020-12 validator has not been run yet:
 ```
 python3 tools/genreport/generate.py \
     --spec path/to/ncbi/datasets/datasets.openapi.yaml \
-    --commit <git commit of that checkout> --out . \\
-    [--schema-base-url https://example.org/schemas/]
+    --commit <git commit of that checkout> --out . \
+    --version vX.Y.Z
 ```
+
+`--version` is the release tag the schemas are published under. It sets every `$id`
+and the Go constant, and it only accepts release tags such as `v0.2.0`, never a branch
+name, so a schema cannot change under a URL that is meant to be stable. Use
+`--schema-base-url https://example.org/schemas/` instead to publish them elsewhere.
+To release: regenerate with that release's version, commit, then tag that commit.
 
 Requires PyYAML. The script stops on any spec construct it does not know, so a
 changed spec cannot be converted silently and wrongly. It also rewrites
